@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kakegurui Gamble</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Roboto:wght@300;400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- DATA STATE -->
+    <div id="ui-overlay">
+        <div id="chip-count-display" class="hidden">Chips: <span id="chips-val">10000</span></div>
+    </div>
+
+    <!-- TITLE SCREEN -->
+    <section id="title-screen" class="screen active">
+        <div class="title-content">
+            <h1 class="main-title">KAKEGURUI</h1>
+            <h2 class="sub-title">The Compulsive Gambler</h2>
+            <div class="menu-buttons">
+                <button id="btn-start" class="btn-primary">START GAMBLING</button>
+                <button id="btn-quit" class="btn-secondary">QUIT</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- GAME SELECTION -->
+    <section id="game-selection" class="screen hidden">
+        <h2>Choose Your Poison</h2>
+        <div class="selection-container">
+            <button id="btn-select-blackjack" class="game-card">
+                <h3>Blackjack</h3>
+                <p>The classic race to 21.</p>
+            </button>
+            <button id="btn-select-poker" class="game-card">
+                <h3>Poker</h3>
+                <p>5-Card Draw. Vs Dealer.</p>
+            </button>
+            <button id="btn-select-big2" class="game-card">
+                <h3>Big 2</h3>
+                <p>1v1 Card Battle.</p>
+            </button>
+        </div>
+        <button id="btn-back-title" class="btn-text">Back</button>
+    </section>
+
+    <!-- GAMEPLAY AREA -->
+    <section id="gameplay-area" class="screen hidden">
+        <div class="game-header">
+            <h2 id="current-game-title">Blackjack</h2>
+            <button id="btn-exit-game" class="btn-small">Forfeit (Exit)</button>
+        </div>
+
+        <!-- BETTING PHASE -->
+        <div id="betting-phase" class="phase-container active">
+            <h3>Place Your Bet</h3>
+            <div class="bet-controls">
+                <button class="btn-bet" data-amount="500">500</button>
+                <button class="btn-bet" data-amount="1000">1000</button>
+                <button class="btn-bet" data-amount="5000">5000</button>
+                <button class="btn-bet" data-amount="all">ALL IN</button>
+            </div>
+            <div class="current-bet-display">Current Bet: <span id="bet-val">0</span></div>
+            <button id="btn-deal" class="btn-primary" disabled>DEAL</button>
+        </div>
+
+        <!-- PLAYING PHASE: BLACKJACK -->
+        <div id="blackjack-board" class="game-board hidden">
+            <div class="dealer-area">
+                <p>Dealer</p>
+                <div id="bj-dealer-cards" class="cards-container"></div>
+                <div id="bj-dealer-score" class="score-display">?</div>
+            </div>
+            <div class="message-area" id="bj-message"></div>
+            <div class="player-area">
+                <p>You</p>
+                <div id="bj-player-cards" class="cards-container"></div>
+                <div id="bj-player-score" class="score-display">0</div>
+            </div>
+            <div class="bj-actions">
+                <button id="btn-bj-hit" class="btn-action">HIT</button>
+                <button id="btn-bj-stand" class="btn-action">STAND</button>
+            </div>
+        </div>
+
+        <!-- PLAYING PHASE: POKER -->
+        <div id="poker-board" class="game-board hidden">
+            <div class="dealer-area">
+                <p>Dealer</p>
+                <div id="pk-dealer-cards" class="cards-container"></div>
+                <div id="pk-dealer-info" class="score-display">?</div>
+            </div>
+            <div class="message-area" id="pk-message"></div>
+            <div class="player-area">
+                <p>You</p>
+                <div id="pk-player-cards" class="cards-container hand"></div>
+                <div id="pk-player-info" class="score-display"></div>
+            </div>
+            <div class="pk-actions">
+                <button id="btn-pk-draw" class="btn-action">DRAW</button>
+                <p class="instruction-text">Click cards to hold.</p>
+            </div>
+        </div>
+
+        <!-- PLAYING PHASE: BIG 2 -->
+        <div id="big2-board" class="game-board hidden">
+            <div class="opponent-area">
+                <p>Rival (Cards: <span id="b2-opp-count">13</span>)</p>
+                <div id="b2-opp-cards" class="cards-container small-cards"></div>
+            </div>
+            <div class="table-area">
+                <div id="b2-last-played" class="cards-container"></div>
+                <p id="b2-status">Game Start</p>
+            </div>
+            <div class="player-area">
+                <p>You</p>
+                <div id="b2-player-cards" class="cards-container hand small-cards"></div>
+            </div>
+            <div class="b2-actions">
+                <button id="btn-b2-play" class="btn-action">PLAY</button>
+                <button id="btn-b2-pass" class="btn-action">PASS</button>
+            </div>
+        </div>
+
+        <!-- ROUND RESULT OVERLAY (Shared) -->
+        <div id="round-result" class="overlay hidden">
+            <h2 id="result-title">YOU WIN</h2>
+            <p id="result-message">+500 Chips</p>
+            <button id="btn-next-round" class="btn-primary">Next Hand</button>
+        </div>
+
+    </section>
+
+    <!-- EFFECTS CONTAINER -->
+    <div id="effects-overlay"></div>
+
+    <!-- GAME OVER SCREEN -->
+    <section id="game-over-screen" class="screen hidden">
+        <div class="horror-container">
+            <h1 class="scary-text">YOU LOST EVERYTHING</h1>
+            <div class="media-container">
+                <!-- Placeholder for Yumeko GIF -->
+                <img id="yumeko-scream" src="yumeko-jabami.gif" alt="Yumeko Screaming">
+            </div>
+            <p>Your life is now ours.</p>
+            <button id="btn-restart" class="btn-primary">Beg for a Second Chance</button>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
