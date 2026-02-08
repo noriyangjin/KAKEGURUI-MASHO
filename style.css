@@ -527,15 +527,34 @@ button {
 
 /* --- MOBILE OPTIMIZATION (iPhone 13 Pro & similar) --- */
 @media (max-width: 600px) {
+    body {
+        padding: 10px;
+        align-items: flex-start;
+        /* Align top on mobile to avoid centering issues with keyboard/scroll */
+        overflow-y: auto;
+        /* Allow scrolling if content is tall */
+    }
+
+    .screen {
+        position: relative;
+        /* Allow flow */
+        height: auto;
+        min-height: 100vh;
+        padding-top: 60px;
+        /* Space for UI overlay */
+        justify-content: flex-start;
+    }
 
     /* Title Screen */
     .main-title {
-        font-size: 3rem;
-        letter-spacing: 2px;
+        font-size: 2.5rem;
+        /* Smaller */
+        letter-spacing: 1px;
+        margin-top: 20%;
     }
 
     .sub-title {
-        font-size: 1rem;
+        font-size: 0.9rem;
         margin-bottom: 2rem;
     }
 
@@ -543,64 +562,107 @@ button {
     .selection-container {
         flex-direction: column;
         gap: 15px;
+        width: 100%;
     }
 
     .game-card {
         width: 100%;
-        height: 100px;
-        padding: 15px;
+        height: auto;
+        padding: 20px;
+        flex-direction: row;
+        /* Horizontal cards on mobile? Or kept vertical stack, but horizontal content */
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .game-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 0;
+    }
+
+    .game-card p {
+        font-size: 0.8rem;
     }
 
     /* Gameplay Header */
     .game-header {
-        flex-direction: column;
-        gap: 5px;
-        align-items: flex-start;
+        position: relative;
+        top: 0;
+        left: 0;
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-bottom: 20px;
     }
 
     #ui-overlay {
+        position: absolute;
         top: 10px;
         right: 10px;
     }
 
     #chip-count-display {
-        font-size: 1rem;
-        padding: 5px 10px;
+        font-size: 0.9rem;
+        padding: 5px 8px;
     }
 
     /* Betting Phase */
+    .phase-container {
+        width: 100%;
+        padding: 20px;
+    }
+
     .bet-controls {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
+        width: 100%;
     }
 
     .btn-bet {
         width: 100%;
-        height: 60px;
+        height: 50px;
+        font-size: 0.9rem;
     }
 
     /* Cards Boards */
     .game-board {
         width: 100%;
-        gap: 15px;
+        gap: 10px;
     }
 
     .cards-container {
-        min-height: 100px;
-        flex-wrap: wrap;
-        /* allow wrapping if needed, or scroll */
+        min-height: 80px;
+        flex-wrap: nowrap;
+        /* Don't wrap, scale down or scroll */
+        justify-content: center;
+        width: 100%;
     }
 
     .card {
-        width: 60px;
-        height: 90px;
-        font-size: 1rem;
+        width: 50px;
+        /* Smaller for iPhone */
+        height: 75px;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+        /* Don't squash too much */
+        margin-left: -10px;
+        /* Overlap slightly to fit 5 */
+    }
+
+    .card:first-child {
+        margin-left: 0;
+    }
+
+    .card.held {
+        transform: translateY(-10px);
     }
 
     /* Poker Dealer/Player Areas */
     .dealer-area,
-    .player-area {
+    .player-area,
+    .opponent-area {
+        width: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -608,18 +670,43 @@ button {
 
     /* Big 2 Specifics */
     .small-cards .card {
-        width: 40px;
-        height: 60px;
-        font-size: 0.8rem;
+        width: 35px;
+        height: 50px;
+        font-size: 0.7rem;
+        margin-left: -15px;
+        /* Heavy overlap for 13 cards */
     }
 
     #b2-player-cards {
         flex-wrap: wrap;
         justify-content: center;
+        padding: 10px 0;
+    }
+
+    .table-area {
+        min-height: 100px;
+    }
+
+    /* Actions */
+    .bj-actions,
+    .pk-actions,
+    .b2-actions {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 15px 0;
+        font-size: 1rem;
     }
 
     /* Game Over */
     .scary-text {
-        font-size: 2.5rem;
+        font-size: 2rem;
+    }
+
+    #game-over-screen {
+        padding: 20px;
     }
 }
