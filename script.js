@@ -46,8 +46,31 @@ const ui = {
 document.addEventListener('DOMContentLoaded', () => {
     updateChipDisplay();
 
+    ui.btnMute = document.getElementById('btn-mute');
+    const bgm = document.getElementById('bgm-audio');
+
+    // Audio State
+    let isMuted = false;
+    bgm.volume = 0.5; // Set reasonable volume
+
+    // Attempt Autoplay on Load
+    bgm.play().catch(() => {
+        console.log("Autoplay blocked. Waiting for interaction.");
+        // Fallback: Play on first interaction
+        const playOnInteraction = () => {
+            bgm.play();
+            document.removeEventListener('click', playOnInteraction);
+            document.removeEventListener('keydown', playOnInteraction);
+        };
+        document.addEventListener('click', playOnInteraction);
+        document.addEventListener('keydown', playOnInteraction);
+    });
+
     // Navigation
-    document.getElementById('btn-start').addEventListener('click', () => showScreen('selection'));
+    document.getElementById('btn-start').addEventListener('click', () => {
+        showScreen('selection');
+    });
+
     document.getElementById('btn-quit').addEventListener('click', () => window.close());
     document.getElementById('btn-back-title').addEventListener('click', () => showScreen('title'));
     document.getElementById('btn-select-blackjack').addEventListener('click', () => enterGame('blackjack'));
@@ -55,6 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-select-big2').addEventListener('click', () => enterGame('big2'));
     document.getElementById('btn-exit-game').addEventListener('click', () => showScreen('selection'));
     document.getElementById('btn-restart').addEventListener('click', resetGame);
+
+    // Mute Toggle
+    ui.btnMute.addEventListener('click', () => {
+        isMuted = !isMuted;
+        bgm.muted = isMuted;
+        ui.btnMute.innerText = isMuted ? '🔇' : '🔊';
+    });
 
     // Betting
     document.querySelectorAll('.btn-bet').forEach(btn => {
