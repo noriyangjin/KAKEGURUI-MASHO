@@ -268,6 +268,8 @@ button {
 
 .bet-controls {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 15px;
 }
 
@@ -481,6 +483,37 @@ button {
     width: 60px;
     height: 90px;
     font-size: 1rem;
+}
+
+/* --- HIGHER OR LOWER --- */
+#hl-board {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+.payout-banner {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    color: var(--color-gold);
+    text-shadow: 0 0 15px var(--color-gold);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px 40px;
+    border: 2px solid var(--color-red-deep);
+    border-radius: 50px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.card-display-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hl-actions {
+    display: flex;
+    gap: 20px;
 }
 
 .table-area {

@@ -17,6 +17,13 @@ let big2State = {
     passCount: 0
 };
 
+// Higher or Lower State
+let hlState = {
+    currentCard: null,
+    potentialPayout: 0,
+    active: false
+};
+
 
 /* --- DOM ELEMENTS --- */
 const screens = {
@@ -35,6 +42,9 @@ const ui = {
     blackjackBoard: document.getElementById('blackjack-board'),
     pokerBoard: document.getElementById('poker-board'),
     big2Board: document.getElementById('big2-board'),
+    hlBoard: document.getElementById('hl-board'),
+    hlPayout: document.getElementById('hl-payout-val'),
+    hlMessage: document.getElementById('hl-message'),
     roundResult: document.getElementById('round-result'),
     resultTitle: document.getElementById('result-title'),
     resultMessage: document.getElementById('result-message'),
@@ -75,9 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-back-title').addEventListener('click', () => showScreen('title'));
     document.getElementById('btn-select-blackjack').addEventListener('click', () => enterGame('blackjack'));
     document.getElementById('btn-select-poker').addEventListener('click', () => enterGame('poker'));
+    document.getElementById('btn-select-hl').addEventListener('click', () => enterGame('hl'));
     document.getElementById('btn-select-big2').addEventListener('click', () => triggerEcstasyEffect());
     document.getElementById('btn-exit-game').addEventListener('click', () => showScreen('selection'));
     document.getElementById('btn-restart').addEventListener('click', resetGame);
+
+    // Higher/Lower Actions
+    document.getElementById('btn-hl-higher').addEventListener('click', () => hlGuess('higher'));
+    document.getElementById('btn-hl-lower').addEventListener('click', () => hlGuess('lower'));
+    document.getElementById('btn-hl-collect').addEventListener('click', hlCollect);
 
     // Mute Toggle
     ui.btnMute.addEventListener('click', () => {
@@ -124,8 +140,114 @@ function enterGame(gameType) {
     if (gameType === 'blackjack') ui.gameTitle.innerText = 'Blackjack';
     if (gameType === 'poker') ui.gameTitle.innerText = 'Poker (Vs Dealer)';
     if (gameType === 'big2') ui.gameTitle.innerText = 'Big 2 (Coming Soon!)';
+    if (gameType === 'hl') {
+        ui.gameTitle.innerText = 'Higher or Lower';
+        // Automatic All-In
+        currentBet = chips;
+        chips = 0;
+        updateChipDisplay();
+        showScreen('gameplay');
+        startHLGame();
+        return;
+    }
     showScreen('gameplay');
     resetRound();
+}
+
+function startHLGame() {
+    ui.bettingPhase.classList.add('hidden');
+    ui.roundResult.classList.add('hidden');
+    ui.hlBoard.classList.remove('hidden');
+
+    deck = createDeck();
+    shuffleDeck(deck);
+
+    hlState.currentCard = deck.pop();
+    hlState.potentialPayout = currentBet;
+    hlState.active = true;
+
+    // Initial collect disabled
+    document.getElementById('btn-hl-collect').disabled = true;
+
+    updateHLUI();
+}
+
+function updateHLUI() {
+    const container = document.getElementById('hl-card-container');
+    container.innerHTML = '';
+    container.appendChild(renderCard(hlState.currentCard));
+    ui.hlPayout.innerText = Math.floor(hlState.potentialPayout);
+    ui.hlMessage.innerText = "Higher or Lower?";
+}
+
+function hlGuess(dir) {
+    if (!hlState.active) return;
+
+    const nextCard = deck.pop();
+    const container = document.getElementById('hl-card-container');
+    container.innerHTML = '';
+    container.appendChild(renderCard(nextCard));
+
+    const oldVal = getHigherLowerValue(hlState.currentCard);
+    const newVal = getHigherLowerValue(nextCard);
+
+    let win = false;
+    let push = false;
+
+    if (newVal === oldVal) {
+        push = true;
+    } else if (dir === 'higher' && newVal > oldVal) {
+        win = true;
+    } else if (dir === 'lower' && newVal < oldVal) {
+        win = true;
+    }
+
+    if (win) {
+        const gain = currentBet * 0.5;
+        hlState.potentialPayout += gain;
+        hlState.currentCard = nextCard;
+        ui.hlPayout.innerText = Math.floor(hlState.potentialPayout);
+        ui.hlMessage.innerText = `CORRECT! +${gain} potential payout.`;
+        document.getElementById('btn-hl-collect').disabled = false;
+        triggerSmallEffect();
+    } else if (push) {
+        hlState.currentCard = nextCard;
+        ui.hlMessage.innerText = "TIE! No change.";
+    } else {
+        hlState.active = false;
+        hlState.potentialPayout = 0;
+        ui.hlMessage.innerText = "WRONG! YOU LOSE EVERYTHING.";
+        setTimeout(() => {
+            showResult(false, false, "LOSER! You guessed wrong.", 0);
+        }, 1500);
+    }
+}
+
+function getHigherLowerValue(card) {
+    // 2 is lowest, Ace is highest for this mode
+    const order = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    return order.indexOf(card.value);
+}
+
+function triggerSmallEffect() {
+    const el = document.createElement('div');
+    el.className = 'floating-text';
+    el.innerText = "GOOD!";
+    el.style.left = '50%';
+    el.style.top = '40%';
+    ui.effectsOverlay.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+}
+
+function hlCollect() {
+    if (!hlState.active) return;
+
+    const payout = Math.floor(hlState.potentialPayout);
+    chips += payout;
+    updateChipDisplay();
+    hlState.active = false;
+
+    showResult(true, false, `COLLECTED ${payout} Chips!`, payout / currentBet);
 }
 
 function resetGame() {
@@ -144,6 +266,8 @@ function placeBet(amount) {
     let betAmount = 0;
     if (amount === 'all') {
         betAmount = chips;
+    } else if (amount === 'half') {
+        betAmount = Math.floor(chips / 2);
     } else {
         betAmount = parseInt(amount);
     }
@@ -153,6 +277,8 @@ function placeBet(amount) {
 
     if (amount === 'all') {
         currentBet = chips;
+    } else if (amount === 'half') {
+        currentBet = Math.floor(chips / 2);
     } else {
         if (chips >= currentBet + betAmount) {
             currentBet += betAmount;
@@ -203,6 +329,7 @@ function resetRound() {
     ui.blackjackBoard.classList.add('hidden');
     ui.pokerBoard.classList.add('hidden');
     ui.big2Board.classList.add('hidden');
+    ui.hlBoard.classList.add('hidden');
     ui.roundResult.classList.add('hidden');
     document.getElementById('btn-deal').disabled = true;
 
@@ -210,8 +337,19 @@ function resetRound() {
     document.body.classList.remove('shake-screen');
 
     // Check Game Over
-    if (chips <= 0) {
+    if (chips <= 0 && currentGame !== 'hl') {
         showGameOver();
+        return;
+    }
+
+    // Continuous Play for Higher or Lower
+    if (currentGame === 'hl') {
+        if (chips <= 0 && hlState.potentialPayout <= 0) {
+            showGameOver();
+            return;
+        }
+        enterGame('hl');
+        return;
     }
 }
 
@@ -358,7 +496,11 @@ function endBlackjackRound(dealerPlayed = false) {
         triggerEcstasyEffect();
     }
 
-    showResult(win, push, msg, 2);
+    if (currentGame === 'hl') {
+        setTimeout(resetRound, 2000);
+    } else {
+        showResult(win, push, msg, 2);
+    }
 }
 
 function triggerEcstasyEffect() {

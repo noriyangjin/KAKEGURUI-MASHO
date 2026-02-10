@@ -51,6 +51,10 @@
                 <h3>Big 2</h3>
                 <p>Coming Soon!</p>
             </button>
+            <button id="btn-select-hl" class="game-card">
+                <h3>Higher/Lower</h3>
+                <p>Guess the next card. Stack or Lose.</p>
+            </button>
         </div>
         <button id="btn-back-title" class="btn-text">Back</button>
     </section>
@@ -69,6 +73,7 @@
                 <button class="btn-bet" data-amount="500">500</button>
                 <button class="btn-bet" data-amount="1000">1000</button>
                 <button class="btn-bet" data-amount="5000">5000</button>
+                <button class="btn-bet" data-amount="half">HALF</button>
                 <button class="btn-bet" data-amount="all">ALL IN</button>
             </div>
             <div class="current-bet-display">Current Bet: <span id="bet-val">0</span></div>
@@ -110,6 +115,23 @@
             <div class="pk-actions">
                 <button id="btn-pk-draw" class="btn-action">DRAW</button>
                 <p class="instruction-text">Click cards to hold.</p>
+            </div>
+        </div>
+
+        <!-- PLAYING PHASE: HIGHER OR LOWER -->
+        <div id="hl-board" class="game-board hidden">
+            <div class="card-display-area">
+                <p class="instruction-text">Next card will be...</p>
+                <div id="hl-card-container" class="cards-container"></div>
+            </div>
+            <div id="hl-payout-display" class="payout-banner">
+                Potential Payout: <span id="hl-payout-val">0</span>
+            </div>
+            <div class="message-area" id="hl-message"></div>
+            <div class="hl-actions">
+                <button id="btn-hl-higher" class="btn-action">HIGHER</button>
+                <button id="btn-hl-lower" class="btn-action">LOWER</button>
+                <button id="btn-hl-collect" class="btn-primary">COLLECT</button>
             </div>
         </div>
 
