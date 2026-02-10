@@ -24,6 +24,15 @@ let hlState = {
     active: false
 };
 
+// Russian Roulette State
+let rrState = {
+    bulletIndex: -1,
+    currentIndex: 0,
+    turn: 1, // 1 or 2
+    active: false,
+    chambers: [false, false, false, false, false, false]
+};
+
 
 /* --- DOM ELEMENTS --- */
 const screens = {
@@ -45,6 +54,10 @@ const ui = {
     hlBoard: document.getElementById('hl-board'),
     hlPayout: document.getElementById('hl-payout-val'),
     hlMessage: document.getElementById('hl-message'),
+    rrBoard: document.getElementById('rr-board'),
+    rrTurn: document.getElementById('rr-turn-display'),
+    rrCylinder: document.getElementById('rr-cylinder'),
+    rrMessage: document.getElementById('rr-message'),
     roundResult: document.getElementById('round-result'),
     resultTitle: document.getElementById('result-title'),
     resultMessage: document.getElementById('result-message'),
@@ -86,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-select-blackjack').addEventListener('click', () => enterGame('blackjack'));
     document.getElementById('btn-select-poker').addEventListener('click', () => enterGame('poker'));
     document.getElementById('btn-select-hl').addEventListener('click', () => enterGame('hl'));
+    document.getElementById('btn-select-rr').addEventListener('click', () => enterGame('rr'));
     document.getElementById('btn-select-big2').addEventListener('click', () => triggerEcstasyEffect());
     document.getElementById('btn-exit-game').addEventListener('click', () => showScreen('selection'));
     document.getElementById('btn-restart').addEventListener('click', resetGame);
@@ -119,6 +133,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-b2-play').addEventListener('click', big2Play);
     document.getElementById('btn-b2-pass').addEventListener('click', big2Pass);
 
+    // Russian Roulette Actions
+    document.getElementById('btn-rr-shoot-self').addEventListener('click', () => rrPullTrigger('self'));
+    document.getElementById('btn-rr-shoot-opp').addEventListener('click', () => rrPullTrigger('opponent'));
+
     // Result
     ui.btnNextRound.addEventListener('click', resetRound);
 });
@@ -150,8 +168,153 @@ function enterGame(gameType) {
         startHLGame();
         return;
     }
+    if (gameType === 'rr') {
+        ui.gameTitle.innerText = 'Russian Roulette';
+        showScreen('gameplay');
+        startRRGame();
+        return;
+    }
     showScreen('gameplay');
     resetRound();
+}
+
+function startRRGame() {
+    ui.bettingPhase.classList.add('hidden');
+    ui.roundResult.classList.add('hidden');
+    ui.rrBoard.classList.remove('hidden');
+
+    rrState.bulletIndex = Math.floor(Math.random() * 6);
+    rrState.currentIndex = 0;
+    rrState.turn = 1;
+    rrState.active = true;
+    rrState.chambers = [false, false, false, false, false, false];
+
+    ui.rrCylinder.classList.add('spin');
+    ui.rrMessage.innerText = "Spinning the cylinder...";
+    document.getElementById('btn-rr-pull').disabled = true;
+
+    setTimeout(() => {
+        ui.rrCylinder.classList.remove('spin');
+        ui.rrMessage.innerText = "Cylinder locked. Pull the trigger.";
+        document.getElementById('btn-rr-pull').disabled = false;
+        updateRRUI();
+    }, 1500);
+}
+
+function updateRRUI() {
+    ui.rrTurn.innerText = `PLAYER ${rrState.turn}'S TURN`;
+    ui.rrTurn.style.color = rrState.turn === 1 ? '#ffd700' : '#ff4444';
+
+    // Clear chambers
+    for (let i = 1; i <= 6; i++) {
+        const chamber = ui.rrBoard.querySelector(`.c${i}`);
+        chamber.classList.remove('fired');
+    }
+
+    // Mark previous chambers as fired (clicked)
+    for (let i = 0; i < rrState.currentIndex; i++) {
+        const chamber = ui.rrBoard.querySelector(`.c${i + 1}`);
+        chamber.classList.add('fired');
+    }
+
+    // Visual rotation of cylinder to current position
+    const rotation = rrState.currentIndex * 60;
+    ui.rrCylinder.style.transform = `rotate(-${rotation}deg)`;
+}
+
+function rrPullTrigger(target) {
+    if (!rrState.active) return;
+
+    document.getElementById('btn-rr-shoot-self').disabled = true;
+    document.getElementById('btn-rr-shoot-opp').disabled = true;
+
+    if (rrState.currentIndex === rrState.bulletIndex) {
+        // LETHAL
+        rrState.active = false;
+
+        // Determine who gets shot
+        let victim = rrState.turn;
+        if (target === 'opponent') {
+            victim = rrState.turn === 1 ? 2 : 1;
+        }
+
+        ui.rrMessage.innerText = `...`;
+
+        setTimeout(() => {
+            triggerBangEffect();
+            triggerLethalEffect();
+            ui.rrMessage.innerText = `BANG! PLAYER ${victim} IS DEAD.`;
+
+            setTimeout(() => {
+                const winner = victim === 1 ? 2 : 1;
+                showRRDeathScreen(winner, victim);
+            }, 2500);
+        }, 500);
+    } else {
+        // CLICK (Safe)
+        ui.rrMessage.innerText = "...";
+        rrState.currentIndex++;
+
+        setTimeout(() => {
+            ui.rrMessage.innerText = "CLICK... You survived.";
+            setTimeout(() => {
+                rrState.turn = rrState.turn === 1 ? 2 : 1;
+                ui.rrMessage.innerText = "Next player, make your choice.";
+                document.getElementById('btn-rr-shoot-self').disabled = false;
+                document.getElementById('btn-rr-shoot-opp').disabled = false;
+                updateRRUI();
+            }, 1000);
+        }, 500);
+    }
+}
+
+function triggerBangEffect() {
+    const overlay = document.getElementById('rr-bang-overlay');
+    overlay.classList.remove('hidden');
+    setTimeout(() => {
+        overlay.classList.add('hidden');
+    }, 2000);
+}
+
+function showRRDeathScreen(winner, loser) {
+    const screen = document.createElement('div');
+    screen.className = 'rr-death-screen';
+    screen.innerHTML = `
+        <h1 class="death-title">DEATH</h1>
+        <p class="death-msg">Player ${loser} has been eliminated.</p>
+        <h2 style="color: #ffd700;">PLAYER ${winner} SURVIVES</h2>
+        <button id="btn-rr-restart" class="btn-primary" style="margin-top: 50px;">Return to Menu</button>
+    `;
+    document.body.appendChild(screen);
+
+    document.getElementById('btn-rr-restart').addEventListener('click', () => {
+        screen.remove();
+        showScreen('selection');
+    });
+}
+
+function triggerLethalEffect() {
+    // Flash
+    const flash = document.createElement('div');
+    flash.className = 'lethal-flash';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 800);
+
+    // Splatter
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            const platter = document.createElement('div');
+            platter.className = 'blood-splatter';
+            platter.innerText = '☠';
+            platter.style.left = 20 + Math.random() * 60 + '%';
+            platter.style.top = 20 + Math.random() * 60 + '%';
+            document.body.appendChild(platter);
+            setTimeout(() => platter.remove(), 2500);
+        }, i * 200);
+    }
+
+    document.body.classList.add('shake-screen');
+    setTimeout(() => document.body.classList.remove('shake-screen'), 1000);
 }
 
 function startHLGame() {
@@ -243,11 +406,10 @@ function hlCollect() {
     if (!hlState.active) return;
 
     const payout = Math.floor(hlState.potentialPayout);
-    chips += payout;
-    updateChipDisplay();
     hlState.active = false;
 
-    showResult(true, false, `COLLECTED ${payout} Chips!`, payout / currentBet);
+    const multiplier = hlState.potentialPayout / (currentBet || 1);
+    showResult(true, false, `COLLECTED ${payout} Chips!`, multiplier);
 }
 
 function resetGame() {
@@ -330,6 +492,7 @@ function resetRound() {
     ui.pokerBoard.classList.add('hidden');
     ui.big2Board.classList.add('hidden');
     ui.hlBoard.classList.add('hidden');
+    ui.rrBoard.classList.add('hidden');
     ui.roundResult.classList.add('hidden');
     document.getElementById('btn-deal').disabled = true;
 
@@ -499,7 +662,7 @@ function endBlackjackRound(dealerPlayed = false) {
     if (currentGame === 'hl') {
         setTimeout(resetRound, 2000);
     } else {
-        showResult(win, push, msg, 2);
+        showResult(win, push, msg, win ? 2 : 0);
     }
 }
 
@@ -637,7 +800,7 @@ function endPokerRound() {
     else if (push) msg = "PUSH. " + msg;
     else msg = "YOU LOSE. " + msg;
 
-    showResult(win, push, msg, 2);
+    showResult(win, push, msg, win ? 2 : 0);
 }
 
 // Simple Poker Evaluator
@@ -921,7 +1084,7 @@ function big2Play() {
 
         if (big2State.hands[0].length === 0) {
             gamePhase = 'result';
-            showResult(true, false, "BIG 2 CHAMPION! YOU WIN!", 20);
+            showResult(true, false, "BIG 2 CHAMPION! YOU WIN!", 2);
             return;
         }
 
@@ -1025,8 +1188,9 @@ function showResult(win, push, message, multiplier) {
     ui.resultTitle.className = win ? "win" : (push ? "win" : "loss");
 
     if (win) {
-        let profit = Math.floor(currentBet * multiplier);
-        chips += (currentBet + profit);
+        let totalReturn = Math.floor(currentBet * multiplier);
+        let profit = totalReturn - currentBet;
+        chips += totalReturn;
         ui.resultMessage.innerText = `${message} (+${profit})`;
     } else if (push) {
         chips += currentBet;

@@ -55,6 +55,10 @@
                 <h3>Higher/Lower</h3>
                 <p>Guess the next card. Stack or Lose.</p>
             </button>
+            <button id="btn-select-rr" class="game-card">
+                <h3>Russian Roulette</h3>
+                <p>2-Player Survival. No chips, high stakes.</p>
+            </button>
         </div>
         <button id="btn-back-title" class="btn-text">Back</button>
     </section>
@@ -132,6 +136,32 @@
                 <button id="btn-hl-higher" class="btn-action">HIGHER</button>
                 <button id="btn-hl-lower" class="btn-action">LOWER</button>
                 <button id="btn-hl-collect" class="btn-primary">COLLECT</button>
+            </div>
+        </div>
+
+        <!-- PLAYING PHASE: RUSSIAN ROULETTE -->
+        <div id="rr-board" class="game-board hidden">
+            <div class="rr-container">
+                <div class="turn-indicator" id="rr-turn-display">PLAYER 1'S TURN</div>
+                <div class="cylinder-area">
+                    <div id="rr-cylinder" class="cylinder-visual">
+                        <div class="chamber c1"></div>
+                        <div class="chamber c2"></div>
+                        <div class="chamber c3"></div>
+                        <div class="chamber c4"></div>
+                        <div class="chamber c5"></div>
+                        <div class="chamber c6"></div>
+                    </div>
+                </div>
+                <div class="message-area" id="rr-message">Spinning the cylinder...</div>
+                <div class="rr-actions">
+                    <button id="btn-rr-shoot-self" class="btn-primary">SHOOT SELF</button>
+                    <button id="btn-rr-shoot-opp" class="btn-secondary">SHOOT OPPONENT</button>
+                </div>
+            </div>
+            <!-- Japanese Bang Effect Overlay -->
+            <div id="rr-bang-overlay" class="bang-overlay hidden">
+                <div class="bang-text">バーン！</div>
             </div>
         </div>
 
