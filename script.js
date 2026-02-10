@@ -189,14 +189,22 @@ function startRRGame() {
     rrState.active = true;
     rrState.chambers = [false, false, false, false, false, false];
 
+    // Clear visual chambers immediately before spin animation
+    updateRRUI();
+
     ui.rrCylinder.classList.add('spin');
     ui.rrMessage.innerText = "Spinning the cylinder...";
-    document.getElementById('btn-rr-pull').disabled = true;
+    document.getElementById('btn-rr-pull') && (document.getElementById('btn-rr-pull').disabled = true);
 
     setTimeout(() => {
         ui.rrCylinder.classList.remove('spin');
         ui.rrMessage.innerText = "Cylinder locked. Pull the trigger.";
-        document.getElementById('btn-rr-pull').disabled = false;
+        document.getElementById('btn-rr-pull') && (document.getElementById('btn-rr-pull').disabled = false);
+
+        // Re-enable shoot buttons for the next round
+        document.getElementById('btn-rr-shoot-self').disabled = false;
+        document.getElementById('btn-rr-shoot-opp').disabled = false;
+
         updateRRUI();
     }, 1500);
 }
@@ -231,6 +239,10 @@ function rrPullTrigger(target) {
     if (rrState.currentIndex === rrState.bulletIndex) {
         // LETHAL
         rrState.active = false;
+
+        // Mark the lethal chamber as fired
+        rrState.currentIndex++;
+        updateRRUI();
 
         // Determine who gets shot
         let victim = rrState.turn;
