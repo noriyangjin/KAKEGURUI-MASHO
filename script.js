@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-back-title').addEventListener('click', () => showScreen('title'));
     document.getElementById('btn-select-blackjack').addEventListener('click', () => enterGame('blackjack'));
     document.getElementById('btn-select-poker').addEventListener('click', () => enterGame('poker'));
-    document.getElementById('btn-select-big2').addEventListener('click', () => enterGame('big2'));
+    document.getElementById('btn-select-big2').addEventListener('click', () => triggerEcstasyEffect());
     document.getElementById('btn-exit-game').addEventListener('click', () => showScreen('selection'));
     document.getElementById('btn-restart').addEventListener('click', resetGame);
 
@@ -123,7 +123,7 @@ function enterGame(gameType) {
     currentGame = gameType;
     if (gameType === 'blackjack') ui.gameTitle.innerText = 'Blackjack';
     if (gameType === 'poker') ui.gameTitle.innerText = 'Poker (Vs Dealer)';
-    if (gameType === 'big2') ui.gameTitle.innerText = 'Big 2';
+    if (gameType === 'big2') ui.gameTitle.innerText = 'Big 2 (Coming Soon!)';
     showScreen('gameplay');
     resetRound();
 }
@@ -358,7 +358,7 @@ function endBlackjackRound(dealerPlayed = false) {
         triggerEcstasyEffect();
     }
 
-    showResult(win, push, msg, 1);
+    showResult(win, push, msg, 2);
 }
 
 function triggerEcstasyEffect() {
@@ -495,7 +495,7 @@ function endPokerRound() {
     else if (push) msg = "PUSH. " + msg;
     else msg = "YOU LOSE. " + msg;
 
-    showResult(win, push, msg, 1);
+    showResult(win, push, msg, 2);
 }
 
 // Simple Poker Evaluator
@@ -547,7 +547,8 @@ function getPokerValue(card) {
     return parseInt(card.value);
 }
 
-/* --- BIG 2 GAME LOGIC --- */
+
+/* --- BIG 2 GAME LOGIC (4-PLAYER) --- */
 const B2_RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
 const B2_SUITS = ['♦', '♣', '♥', '♠'];
 
@@ -561,114 +562,250 @@ function sortBig2Hand(hand) {
     return hand.sort((a, b) => getBig2Value(a) - getBig2Value(b));
 }
 
+// 0: Player, 1: Right, 2: Top, 3: Left
+const PLAYER_NAMES = ["You", "Rival Right", "Rival Top", "Rival Left"];
+
 function startBig2() {
-    big2State.pHand = [];
-    big2State.oHand = [];
+    // Initialize State
+    gamePhase = 'playing';
+    big2State.hands = [[], [], [], []]; // 4 hands
     big2State.lastPlayed = [];
     big2State.passCount = 0;
     big2State.control = true;
 
+    // Create & Shuffle Deck
     big2State.deck = createDeck();
     shuffleDeck(big2State.deck);
 
-    for (let i = 0; i < 13; i++) big2State.pHand.push(big2State.deck.pop());
-    for (let i = 0; i < 13; i++) big2State.oHand.push(big2State.deck.pop());
-
-    sortBig2Hand(big2State.pHand);
-    sortBig2Hand(big2State.oHand);
-
-    const pLow = getBig2Value(big2State.pHand[0]);
-    const oLow = getBig2Value(big2State.oHand[0]);
-
-    if (pLow < oLow) {
-        big2State.turn = 'player';
-        document.getElementById('b2-status').innerText = "Your Turn (Lowest Card)";
-        big2State.control = true;
-    } else {
-        big2State.turn = 'opponent';
-        big2State.control = true;
-        document.getElementById('b2-status').innerText = "Opponent's Turn";
-        setTimeout(big2AI, 1000);
+    // Deal 13 cards to each
+    for (let i = 0; i < 52; i++) {
+        big2State.hands[i % 4].push(big2State.deck[i]);
     }
 
-    renderBig2Board();
+    // Sort all hands
+    big2State.hands.forEach(h => sortBig2Hand(h));
+
+    // Determine Start: Holder of Lowest Card (3 of Diamonds / Lowest value)
+    let lowestVal = 999;
+    let starter = 0;
+
+    for (let p = 0; p < 4; p++) {
+        if (big2State.hands[p].length > 0) {
+            let val = getBig2Value(big2State.hands[p][0]);
+            if (val < lowestVal) {
+                lowestVal = val;
+                starter = p;
+            }
+        }
+    }
+
+    big2State.turn = starter;
+    big2State.control = true; // First player has control (Free Turn)
+
+    // Safety Force Clear
+    big2State.lastPlayed = [];
+    big2State.passCount = 0;
+
+    console.log(`Big 2 Started. Starter: ${starter}, Lowest Card Val: ${lowestVal}`);
+
+    updateBig2UI();
+
+    if (starter !== 0) {
+        setTimeout(playBig2Turn, 800);
+    }
 }
 
-function renderBig2Board() {
-    const pContainer = document.getElementById('b2-player-cards');
-    pContainer.innerHTML = '';
-    big2State.pHand.forEach(c => {
-        const el = renderCard(c);
-        el.classList.add('big2-card');
-        el.dataset.val = getBig2Value(c);
-        if (c.selected) el.classList.add('held');
+function playBig2Turn() {
+    if (gamePhase !== 'playing') return;
 
-        el.addEventListener('click', () => {
-            if (big2State.turn === 'player') {
-                c.selected = !c.selected;
-                renderBig2Board();
+    const pIdx = big2State.turn;
+    if (pIdx === 0) return; // Player's turn, wait for input
+
+    // AI Logic for Players 1, 2, 3
+    let hand = big2State.hands[pIdx];
+    let play = null;
+
+    // 1. Analyze
+    const combos = findBig2Combos(hand);
+
+    // 2. Decide
+    if (big2State.control || big2State.lastPlayed.length === 0) {
+        // AI has control: Play lowest possible set to get rid of cards
+        // Strategy: Play 5-card hands first, then Triples, Pairs, Singles?
+        // Or keep it simple: Play smallest combo.
+        if (combos.fives.length > 0) play = combos.fives[0];
+        else if (combos.triples.length > 0) play = combos.triples[0];
+        else if (combos.pairs.length > 0) play = combos.pairs[0];
+        else play = [hand[0]]; // Play lowest single
+    } else {
+        // Response
+        const last = big2State.lastPlayed;
+        const lastType = getBig2HandType(last);
+        const lastVal = getBig2HandValue(last, lastType);
+
+        if (last.length === 1) {
+            play = hand.find(c => getBig2Value(c) > lastVal);
+            if (play) play = [play];
+        } else if (last.length === 2 && combos.pairs.length > 0) {
+            play = combos.pairs.find(p => getBig2HandValue(p, { name: 'Pair' }) > lastVal);
+        } else if (last.length === 3 && combos.triples.length > 0) {
+            play = combos.triples.find(t => getBig2HandValue(t, { name: 'Triple' }) > lastVal);
+        } else if (last.length === 5 && combos.fives.length > 0) {
+            const betterFives = combos.fives.filter(f => {
+                const fType = getBig2HandType(f);
+                if (fType.rank > lastType.rank) return true;
+                if (fType.rank === lastType.rank) return getBig2HandValue(f, fType) > lastVal;
+                return false;
+            });
+            if (betterFives.length > 0) play = betterFives[0];
+        }
+    }
+
+    // 3. Execute or Pass
+    if (play) {
+        big2State.lastPlayed = play;
+        // Remove cards from hand
+        const playVals = play.map(c => getBig2Value(c));
+        big2State.hands[pIdx] = hand.filter(c => !playVals.includes(getBig2Value(c)));
+
+        big2State.control = false;
+        big2State.passCount = 0; // Reset pass count on play
+
+        console.log(`AI ${pIdx} Played:`, play);
+
+        updateBig2UI();
+
+        // WIN CHECK
+        if (big2State.hands[pIdx].length === 0) {
+            gamePhase = 'result';
+            showResult(false, false, `${PLAYER_NAMES[pIdx]} Wins! You Lose.`, 0);
+            return;
+        }
+
+        nextTurn();
+    } else {
+        // Pass
+        console.log(`AI ${pIdx} Passed`);
+        passTurn();
+    }
+}
+
+function findBig2Combos(hand) {
+    const rankGroups = {};
+    hand.forEach(c => {
+        if (!rankGroups[c.value]) rankGroups[c.value] = [];
+        rankGroups[c.value].push(c);
+    });
+
+    const pairs = [];
+    const triples = [];
+
+    for (const r in rankGroups) {
+        const g = rankGroups[r];
+        if (g.length >= 2) {
+            for (let i = 0; i < g.length; i++) {
+                for (let j = i + 1; j < g.length; j++) {
+                    pairs.push([g[i], g[j]]);
+                }
             }
-        });
-        pContainer.appendChild(el);
-    });
+        }
+        if (g.length >= 3) {
+            triples.push(g.slice(0, 3));
+        }
+    }
 
-    const oContainer = document.getElementById('b2-opp-cards');
-    oContainer.innerHTML = '';
-    big2State.oHand.forEach(() => {
-        oContainer.appendChild(renderCard({ suit: '', value: '' }, true));
-    });
-    document.getElementById('b2-opp-count').innerText = big2State.oHand.length;
+    return {
+        singles: hand.map(c => [c]),
+        pairs: pairs,
+        triples: triples,
+        fives: [] // TODO: Implement straights/flushes
+    };
+}
 
-    const tContainer = document.getElementById('b2-last-played');
-    tContainer.innerHTML = '';
-    big2State.lastPlayed.forEach(c => tContainer.appendChild(renderCard(c)));
+function getBig2HandType(cards) {
+    if (cards.length === 1) return { rank: 1, name: 'Single' };
+    if (cards.length === 2 && cards[0].value === cards[1].value) return { rank: 2, name: 'Pair' };
+    if (cards.length === 3 && cards[0].value === cards[1].value && cards[0].value === cards[2].value) return { rank: 3, name: 'Triple' };
+    // Simplified checks for 5 ignored for now to prevent crash
+    return { rank: 0, name: 'Invalid' };
+}
 
-    document.getElementById('btn-b2-play').disabled = big2State.turn !== 'player';
-    document.getElementById('btn-b2-pass').disabled = big2State.turn !== 'player' || big2State.control;
+function getBig2HandValue(cards, type) {
+    // Simplified value: value of last card
+    return getBig2Value(cards[cards.length - 1]);
+}
+
+function nextTurn() {
+    big2State.turn = (big2State.turn + 1) % 2; // Cycle 0, 1
+    updateBig2UI();
+
+    if (big2State.turn !== 0) {
+        // AI Turn (Rival)
+        setTimeout(playBig2Turn, 1000);
+    } else {
+        // Your Turn
+        console.log("Your Turn");
+        const status = document.getElementById('b2-status');
+        if (status) status.innerText = big2State.control ? "YOUR TURN (Free)" : "YOUR TURN";
+    }
+}
+
+function passTurn() {
+    big2State.passCount++;
+    console.log(`Pass Count: ${big2State.passCount}`);
+
+    // In 1v1, if 1 person passes (the other person), the active player gets control.
+    if (big2State.passCount >= 1) {
+        console.log("Control Reset to Next Player");
+        big2State.control = true;
+        big2State.lastPlayed = [];
+        big2State.passCount = 0;
+    }
+
+    nextTurn();
 }
 
 function big2Play() {
-    const selected = big2State.pHand.filter(c => c.selected);
+    const selected = big2State.hands[0].filter(c => c.selected);
     if (selected.length === 0) return;
 
     if (isValidBig2Play(selected)) {
         big2State.lastPlayed = selected;
-        big2State.pHand = big2State.pHand.filter(c => !c.selected);
+        big2State.hands[0] = big2State.hands[0].filter(c => !c.selected);
         big2State.control = false;
         big2State.passCount = 0;
 
-        checkBig2Win();
-        if (gamePhase === 'playing') {
-            big2State.turn = 'opponent';
-            document.getElementById('b2-status').innerText = "Opponent's Turn";
-            renderBig2Board();
-            setTimeout(big2AI, 1000);
+        updateBig2UI();
+
+        if (big2State.hands[0].length === 0) {
+            gamePhase = 'result';
+            showResult(true, false, "BIG 2 CHAMPION! YOU WIN!", 20);
+            return;
         }
+
+        nextTurn();
     } else {
         alert("Invalid Play!");
     }
 }
 
 function big2Pass() {
-    if (big2State.control) return;
-
-    big2State.turn = 'opponent';
-    document.getElementById('b2-status').innerText = "Passed. Opponent's Turn";
-
-    big2State.passCount++;
-    if (big2State.passCount >= 1) {
-        big2State.control = true;
-        big2State.lastPlayed = [];
+    if (big2State.control) {
+        alert("You have control, you cannot pass!");
+        return;
     }
-
-    big2State.pHand.forEach(c => c.selected = false);
-
-    renderBig2Board();
-    setTimeout(big2AI, 1000);
+    big2State.hands[0].forEach(c => c.selected = false);
+    passTurn();
 }
+
+/* --- BIG 2 AI & LOGIC --- */
 
 function isValidBig2Play(cards) {
     sortBig2Hand(cards);
+
+    // Check if player holds lowest card on first turn
+    // (Simplified: Game logic handles turn order, but Strict rules require playing lowest card. 
+    // We will relax this for player freedom, but AI will do it.)
 
     const type = getBig2HandType(cards);
     if (!type) return false;
@@ -696,9 +833,13 @@ function getBig2HandType(cards) {
         if (cards[0].value === cards[1].value) return { rank: 2, name: 'Pair' };
         return null;
     }
+    if (cards.length === 3) {
+        if (cards[0].value === cards[1].value && cards[1].value === cards[2].value) return { rank: 3, name: 'Triple' };
+        return null;
+    }
     if (cards.length === 5) {
         let isStraight = true;
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 4; i++) { // Simple sequential check based on Big 2 Ranks
             if (Math.floor(getBig2Value(cards[i + 1]) / 4) !== Math.floor(getBig2Value(cards[i]) / 4) + 1) isStraight = false;
         }
 
@@ -718,76 +859,21 @@ function getBig2HandType(cards) {
 }
 
 function getBig2HandValue(cards, type) {
+    // Value of hand is determined by highest card, EXCEPT for Full House/Quads where it's the rank of the combo
+    if (type.name === 'Full House' || type.name === 'Quads' || type.name === 'Triple') {
+        const counts = {};
+        cards.forEach(c => counts[c.value] = (counts[c.value] || 0) + 1);
+        // Find value with count >= 3 (for FH/Triple) or 4 (Quads)
+        for (let v in counts) {
+            if (type.name === 'Quads' && counts[v] === 4) return B2_RANKS.indexOf(v) * 4; // Rank only
+            if ((type.name === 'Full House' || type.name === 'Triple') && counts[v] >= 3) return B2_RANKS.indexOf(v) * 4;
+        }
+    }
     const maxCard = cards[cards.length - 1];
     return getBig2Value(maxCard);
 }
 
-/* --- BIG 2 AI --- */
-function big2AI() {
-    if (gamePhase !== 'playing') return;
-
-    let play = null;
-    let hand = big2State.oHand;
-
-    if (big2State.control || big2State.lastPlayed.length === 0) {
-        play = [hand[0]];
-    } else {
-        const toBeat = big2State.lastPlayed;
-        const targetVal = getBig2HandValue(toBeat, getBig2HandType(toBeat));
-
-        if (toBeat.length === 1) {
-            play = hand.find(c => getBig2Value(c) > targetVal);
-            if (play) play = [play];
-        } else if (toBeat.length === 2) {
-            for (let i = 0; i < hand.length - 1; i++) {
-                if (hand[i].value === hand[i + 1].value) {
-                    let p = [hand[i], hand[i + 1]];
-                    if (getBig2HandValue(p) > targetVal) {
-                        play = p;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    if (play) {
-        big2State.lastPlayed = play;
-        big2State.oHand = big2State.oHand.filter(c => !play.includes(c));
-        big2State.control = false;
-        big2State.passCount = 0;
-        document.getElementById('b2-status').innerText = "Opponent Played.";
-
-        checkBig2Win();
-    } else {
-        if (big2State.control) {
-            play = [hand[0]];
-            big2State.lastPlayed = play;
-            big2State.oHand = hand.filter(c => c !== hand[0]);
-            big2State.control = false;
-        } else {
-            big2State.passCount++;
-            big2State.control = true;
-            big2State.lastPlayed = [];
-            document.getElementById('b2-status').innerText = "Opponent Passed. Your Control.";
-        }
-    }
-
-    if (gamePhase === 'playing') {
-        big2State.turn = 'player';
-        renderBig2Board();
-    }
-}
-
-function checkBig2Win() {
-    if (big2State.pHand.length === 0) {
-        gamePhase = 'result';
-        showResult(true, false, "BIG 2 WINNER!", 2);
-    } else if (big2State.oHand.length === 0) {
-        gamePhase = 'result';
-        showResult(false, false, "OPPONENT WINS BIG 2.", 0);
-    }
-}
+/* --- RESULTS SYSTEM (End of Big 2 Logic) --- */
 
 /* --- RESULTS SYSTEM --- */
 function showResult(win, push, message, multiplier) {

@@ -47,9 +47,9 @@
                 <h3>Poker</h3>
                 <p>5-Card Draw. Vs Dealer.</p>
             </button>
-            <button id="btn-select-big2" class="game-card">
+            <button id="btn-select-big2" class="game-card locked">
                 <h3>Big 2</h3>
-                <p>1v1 Card Battle.</p>
+                <p>Coming Soon!</p>
             </button>
         </div>
         <button id="btn-back-title" class="btn-text">Back</button>
@@ -114,22 +114,52 @@
         </div>
 
         <!-- PLAYING PHASE: BIG 2 -->
-        <div id="big2-board" class="game-board hidden">
-            <div class="opponent-area">
-                <p>Rival (Cards: <span id="b2-opp-count">13</span>)</p>
-                <div id="b2-opp-cards" class="cards-container small-cards"></div>
-            </div>
-            <div class="table-area">
-                <div id="b2-last-played" class="cards-container"></div>
-                <p id="b2-status">Game Start</p>
-            </div>
-            <div class="player-area">
-                <p>You</p>
-                <div id="b2-player-cards" class="cards-container hand small-cards"></div>
-            </div>
-            <div class="b2-actions">
-                <button id="btn-b2-play" class="btn-action">PLAY</button>
-                <button id="btn-b2-pass" class="btn-action">PASS</button>
+        <div id="big2-board" class="game-board hidden poker-table-layout">
+            <!-- THE TABLE SURFACE -->
+            <div class="b2-table-surface">
+
+                <!-- CENTER FIELD (Last Played) -->
+                <div class="table-center">
+                    <div id="b2-last-played" class="cards-container"></div>
+                    <p id="b2-status" class="status-text">Waiting...</p>
+                </div>
+
+                <!-- OPPONENT TOP -->
+                <div class="seat top" id="opp-top">
+                    <div class="player-info">
+                        <!-- RIVAL (Top) -->
+                        <div class="seat top">
+                            <div class="player-info">
+                                <span class="p-name">RIVAL</span>
+                                <span class="p-chips">10000</span>
+                            </div>
+                            <div class="deck-stack">
+                                <div class="card back deck-visual"></div>
+                                <div class="card-count-badge" id="b2-rival-count-top">26</div>
+                            </div>
+                            <div id="status-top" class="status-pill hidden">THINKING</div>
+                        </div>
+
+                        <!-- RIVAL LEFT (Hidden) -->
+                        <div class="seat left hidden" style="display:none"></div>
+
+                        <!-- RIVAL RIGHT (Hidden) -->
+                        <div class="seat right hidden" style="display:none"></div>
+
+                        <!-- PLAYER BOTTOM (You) -->
+                        <div class="seat bottom">
+                            <div class="b2-actions-floating">
+                                <button id="btn-b2-play" class="btn-action">PLAY</button>
+                                <button id="btn-b2-pass" class="btn-action secondary">PASS</button>
+                            </div>
+                            <div id="b2-player-cards" class="cards-container hand"></div>
+                            <div class="player-info">
+                                <span class="p-name">YOU</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 

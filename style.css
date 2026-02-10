@@ -20,7 +20,8 @@ body {
     background-color: var(--color-bg);
     color: var(--color-text);
     font-family: var(--font-main);
-    overflow: hidden;
+    overflow: auto;
+    /* Allow scrolling */
     height: 100vh;
     display: flex;
     justify-content: center;
@@ -196,6 +197,17 @@ button {
     transform: translateY(-10px);
     border-color: var(--color-red-bright);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.game-card.locked {
+    filter: grayscale(100%) brightness(0.5);
+    cursor: help;
+    border-color: #333;
+}
+
+.game-card.locked:hover {
+    filter: grayscale(80%) brightness(0.7);
+    border-color: var(--color-red-deep);
 }
 
 .game-card h3 {
@@ -547,6 +559,301 @@ button {
     }
 }
 
+/* --- BIG 2 POKER TABLE LAYOUT --- */
+.poker-table-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    padding: 20px;
+    /* overflow: hidden;  <-- REMOVED TO ALLOW BOTTOM CARDS TO SHOW */
+}
+
+.b2-table-surface {
+    position: relative;
+    width: 90%;
+    max-width: 1000px;
+    height: 70vh;
+    /* Responsive height */
+    background: radial-gradient(circle at center, #500000, #2a0000);
+    /* Kakegurui Red Felt */
+    border: 15px solid #4a2c0f;
+    /* Wood border */
+    box-shadow:
+        inset 0 0 50px #000,
+        0 0 20px rgba(0, 0, 0, 0.8),
+        0 0 0 5px #8b5a2b;
+    /* Outer gold rim */
+    border-radius: 200px;
+    /* Oval Shape */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* TABLE CENTER */
+.table-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+#b2-last-played {
+    min-height: 100px;
+    margin-bottom: 10px;
+    transform: scale(1.1);
+    /* Slightly larger played cards */
+}
+
+/* SEATS (Top, Left, Right, Bottom) */
+.seat {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.seat .player-info {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--color-gold);
+    text-align: center;
+    margin-bottom: 5px;
+    backdrop-filter: blur(2px);
+}
+
+.seat .p-name {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-gold);
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.seat .p-chips {
+    font-size: 0.7rem;
+    color: #fff;
+}
+
+/* POSITIONS */
+/* OPPONENT DECK STACKS */
+.deck-stack {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 5px;
+}
+
+/* KAKEGURUI THEMED DECK */
+.deck-visual {
+    width: 45px;
+    height: 65px;
+    /* Red and Black Pattern */
+    background:
+        repeating-linear-gradient(45deg, #1a1a1a, #1a1a1a 5px, transparent 5px, transparent 10px),
+        repeating-linear-gradient(-45deg, #4a0000, #4a0000 5px, transparent 5px, transparent 10px),
+        linear-gradient(to bottom, #800000, #000);
+    border: 2px solid #ffd700;
+    /* Gold Border */
+    border-radius: 4px;
+    /* Stack effect */
+    box-shadow:
+        2px 2px 0 #330000,
+        3px 3px 0 #ffd700,
+        4px 4px 5px rgba(0, 0, 0, 0.8);
+}
+
+.deck-stack.vertical .deck-visual {
+    width: 65px;
+    height: 45px;
+    /* Rotated stack effect */
+    box-shadow:
+        2px 2px 0 #330000,
+        3px 3px 0 #ffd700,
+        4px 4px 5px rgba(0, 0, 0, 0.8);
+}
+
+.card-count-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #000;
+    color: #ffd700;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    font-size: 0.9rem;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #ffd700;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+    z-index: 25;
+}
+
+/* Adjustments for specific seats - RELATIVE TO DECK STACK */
+.seat.top .deck-stack {
+    margin-top: 10px;
+}
+
+.seat.left .deck-stack {
+    margin-right: 15px;
+}
+
+.seat.right .deck-stack {
+    margin-left: 15px;
+}
+
+/* ABSOLUTE POSITIONING FOR SEATS */
+.seat.top {
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.seat.left {
+    left: -60px;
+    top: 50%;
+    transform: translateY(-50%);
+    align-items: flex-end;
+}
+
+.seat.right {
+    right: -60px;
+    top: 50%;
+    transform: translateY(-50%);
+    align-items: flex-start;
+}
+
+/* BOTTOM SEAT (YOU) FIX */
+.seat.bottom {
+    bottom: 50px;
+    /* Move UP comfortably onto the screen */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    z-index: 2000;
+}
+
+.seat.bottom * {
+    pointer-events: auto;
+    /* Re-enable clicks on children */
+}
+
+#b2-player-cards {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin-bottom: 20px;
+    width: 100%;
+    min-height: 100px;
+    /* Ensure height */
+    scale: 1.1;
+    /* Slightly larger */
+    z-index: 2000;
+    /* Super high priority */
+    position: relative;
+}
+
+#b2-player-cards .card {
+    width: 70px;
+    height: 100px;
+    margin-left: -50px;
+    /* Tighter overlap for 26 cards */
+    /* Overlap */
+    transition: transform 0.2s, margin 0.2s;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    background-color: white;
+    /* Ensure visible */
+}
+
+#b2-player-cards .card:first-child {
+    margin-left: 0;
+}
+
+#b2-player-cards .card:hover {
+    transform: translateY(-20px) scale(1.1);
+    z-index: 200;
+}
+
+#b2-player-cards .card.held {
+    transform: translateY(-30px);
+    border: 2px solid var(--color-gold);
+    box-shadow: 0 0 15px var(--color-gold);
+    z-index: 150;
+}
+
+/* Player Actions moved up slightly */
+.b2-actions-floating {
+    position: relative;
+    /* Change to relative to stack normally in column */
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    pointer-events: auto;
+}
+
+/* STATUS PILLS */
+.status-pill {
+    margin-top: 5px;
+    font-size: 0.7rem;
+    background: var(--color-neon);
+    color: black;
+    padding: 2px 8px;
+    border-radius: 10px;
+    animation: pulse 1s infinite;
+}
+
+@media (max-width: 600px) {
+    .b2-table-surface {
+        width: 98%;
+        height: 60vh;
+        border-width: 8px;
+        border-radius: 100px;
+    }
+
+    .seat .player-info {
+        padding: 2px 5px;
+    }
+
+    .seat.left {
+        left: -10px;
+    }
+
+    .seat.right {
+        right: -10px;
+    }
+
+    .seat.top {
+        top: -20px;
+    }
+
+    #b2-player-cards {
+        transform: scale(0.9) translateY(0);
+        margin-bottom: 20px;
+    }
+
+    .b2-actions-floating {
+        bottom: 140px;
+        /* Higher up */
+    }
+}
+
 /* --- MOBILE OPTIMIZATION (iPhone 13 Pro & similar) --- */
 @media (max-width: 600px) {
     body {
@@ -731,4 +1038,55 @@ button {
     #game-over-screen {
         padding: 20px;
     }
+}
+
+/* --- GAME OVER FIXES --- */
+@keyframes shake {
+    0% {
+        transform: translate(1px, 1px) rotate(0deg);
+    }
+
+    10% {
+        transform: translate(-1px, -2px) rotate(-1deg);
+    }
+
+    20% {
+        transform: translate(-3px, 0px) rotate(1deg);
+    }
+
+    30% {
+        transform: translate(3px, 2px) rotate(0deg);
+    }
+
+    40% {
+        transform: translate(1px, -1px) rotate(1deg);
+    }
+
+    50% {
+        transform: translate(-1px, 2px) rotate(-1deg);
+    }
+
+    60% {
+        transform: translate(-3px, 1px) rotate(0deg);
+    }
+
+    70% {
+        transform: translate(3px, 1px) rotate(-1deg);
+    }
+
+    80% {
+        transform: translate(-1px, -1px) rotate(1deg);
+    }
+
+    90% {
+        transform: translate(1px, 2px) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(1px, -2px) rotate(-1deg);
+    }
+}
+
+#game-over-screen {
+    z-index: 20000 !important;
 }
